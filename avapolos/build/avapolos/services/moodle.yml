@@ -1,0 +1,69 @@
+version: '2.1'
+
+services:
+
+  db_moodle_ies:
+    container_name: db_moodle_ies
+    image: avapolos/postgres:bdr
+    environment:
+     - POSTGRES_PASSWORD=${DB_MOODLE_POSTGRES_PASSWORD}
+     - PUID=${PUID}
+     - PGID=${PGID}
+    volumes:
+     - ${DATA_PATH}/db_moodle_ies:/var/lib/postgresql/data
+    networks:
+      avapolos:
+    restart: unless-stopped
+
+  db_moodle_polo:
+    container_name: db_moodle_polo
+    image: avapolos/postgres:bdr
+    environment:
+      - POSTGRES_PASSWORD=${DB_MOODLE_POSTGRES_PASSWORD}
+      - PUID=${PUID}
+      - PGID=${PGID}
+    volumes:
+     - ${DATA_PATH}/db_moodle_polo:/var/lib/postgresql/data
+    networks:
+      avapolos:
+    restart: unless-stopped
+
+  moodle:
+    container_name: moodle
+    image: avapolos/webserver:lite
+    ports:
+      - "81:80"
+    volumes:
+      - ${DATA_PATH}/moodle:/app/
+    networks:
+      avapolos:
+      proxy:
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=moodle"
+      - "traefik.frontend.rule=Host:moodle.avapolos"
+      - "traefik.port=80"
+      - "traefik.docker.network=proxy"
+      - "traefik.frontend.passHostHeader=true"
+      - "traefik.frontend.headers.STSSeconds=315360000"
+      - "traefik.frontend.headers.browserXSSFilter=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.STSIncludeSubdomains=true"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+    depends_on:
+      db_moodle_ies:
+        condition: service_healthy
+      db_moodle_polo:
+        condition: service_healthy
+
+networks:
+  avapolos:
+    external: true
+  proxy:
+    external: true
