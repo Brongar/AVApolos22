@@ -79,7 +79,7 @@ services:
     restart: unless-stopped
     depends_on:
       replication-bootstrapper:
-        condition: service_completed_successfully
+        condition: service_started
     # healthcheck:
     #   test: ["CMD", "curl", "-f", "http://localhost:80/"]
     #   interval: 30s
